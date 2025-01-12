@@ -1,0 +1,92 @@
+**Argocd Installation Process.
+
+Step1:
+Method 1: Using Manifest Files
+
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+Method 2: Using a Helm Chart
+
+Alternatively, you can install ArgoCD using the Helm chart, which allows for more customization through Helm values.
+
+    Add the ArgoCD Helm repository:
+
+helm repo add argo https://argoproj.github.io/argo-helm
+
+2. Install the Helm chart with a custom values file:
+
+helm install argocd-demo argo/argo-cd -f argocd-custom-values.yaml
+
+Step2:
+Step 2: Verify the Installation
+
+kubectl get pods -n argocd
+
+**Accessing the ArgoCD Dashboard:
+
+Login to the Dashboard
+
+Open your browser and go to `https://localhost:8080` or http://<public-ip>:<nodeport>
+
+The default username is admin, and to retrieve the password, use:
+
+kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath={.data.password} | base64 -d
+
+
+**Deploying Your First Application with ArgoCD
+Step 1: Create a Git Repository
+
+First, create a Git repository that contains your Kubernetes manifests. This repository will serve as the source for ArgoCD to deploy your application.
+Step 2: Create an Application in ArgoCD
+
+Method 1: Using the ArgoCD UI
+
+    >Create a Git Repository: First, create a Git repository that contains your Kubernetes manifests. This repository will serve as the source for ArgoCD to deploy your application.
+    Create an Application in ArgoCD:
+
+    >In the ArgoCD dashboard, click on New App and fill in the following details:
+    >Application Name: my-first-app
+    >Project: default
+    >Sync Policy: Manual or Automatic (your choice)
+    >Repository URL: URL of your Git repository
+    >Path: Path to your Kubernetes manifests in the repository
+    >Cluster URL: Leave as default for your current cluster
+    >Namespace: The namespace where the application should be deployed
+	
+
+##Method 2: Using a Manifest File
+
+ ArgoCD application can be configured by defining it in a manifest file and applying it with kubectl.
+
+    Create the Manifest: Save the following content to a file named argocd-demo-app.yaml:
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: first-argocd-demo-app
+  namespace: argocd
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/anveshmuppeda/argo-cd-demo
+    targetRevision: HEAD
+    path: development
+
+  destination: 
+    server: https://kubernetes.default.svc
+    namespace: argocd-demo
+
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+
+    automated:
+      selfHeal: true
+      prune: true
+
+2. Apply the Manifest:
+
+
+kubectl apply -f argocd-demo-app.yaml
